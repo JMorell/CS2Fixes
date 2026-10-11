@@ -1,4 +1,4 @@
-﻿/**
+/**
  * =============================================================================
  * CS2Fixes
  * Copyright (C) 2023-2026 Source2ZE
@@ -286,3 +286,9 @@ void ZR_Hook_ClientCommand_JoinTeam(CPlayerSlot slot, const CCommand& args);
 void ZR_Precache(IEntityResourceManifest* pResourceManifest);
 bool ZR_CheckTeamWinConditions(int iTeamNum);
 void ZR_PostEventAbstract_SosStartSoundEvent(const uint64* pClients, CNetMessagePB<CMsgSosStartSoundEvent>* pMsg);
+void ZR_Infect(CCSPlayerController* pAttackerController, CCSPlayerController* pVictimController, bool bDontBroadcast);
+void ZR_InfectMotherZombie(CCSPlayerController* pVictimController, std::vector<SpawnPoint*> spawns);
+void ZR_Cure(CCSPlayerController* pTargetController);
+bool ZR_IsMotherZombie(int iSlot);
+bool ZR_GetRespawnEnabled();
+std::vector<SpawnPoint*> ZR_GetSpawns();

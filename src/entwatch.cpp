@@ -38,6 +38,7 @@
 #include "map_votes.h"
 #include "networksystem/inetworkmessages.h"
 #include "playermanager.h"
+#include "zr_interface.h"
 #include "recipientfilters.h"
 #include "serversideclient.h"
 #include "tier0/vprof.h"
@@ -806,6 +807,8 @@ void EWItemInstance::Pickup(int slot)
 
 	if (bShowPickup)
 		ClientPrintAll(HUD_PRINTTALK, EW_PREFIX "\x03%s \x05has picked up %s%s", pController->GetPlayerName(), sChatColor, szItemName.c_str());
+
+	FireItemPickup(pController->GetPlayerSlot(), szItemName.c_str());
 }
 
 void EWItemInstance::Drop(EWDropReason reason, CCSPlayerController* pController)
@@ -918,6 +921,8 @@ void EWItemInstance::Drop(EWDropReason reason, CCSPlayerController* pController)
 		StartGlow();
 
 	iOwnerSlot = -1;
+	if (pController)
+		FireItemDrop(pController->GetPlayerSlot(), szItemName.c_str());
 }
 
 std::string EWItemInstance::GetHandlerStateText()

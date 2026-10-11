@@ -39,6 +39,7 @@
 #include "utils/entity.h"
 #include "vendor/nlohmann/json.hpp"
 #include "zombiereborn.h"
+#include "zr_interface.h"
 #include <fstream>
 #include <sstream>
 
@@ -57,6 +58,21 @@ static CHandle<CBaseEntity> g_hRespawnToggler;
 static CHandle<CTeam> g_hTeamCT;
 static CHandle<CTeam> g_hTeamT;
 std::vector<ZEPlayerHandle> g_MotherZombies;
+
+bool ZR_IsMotherZombie(int iSlot)
+{
+	for (const auto& hPlayer : g_MotherZombies)
+	{
+		if (hPlayer.IsValid() && (int)hPlayer.GetPlayerSlot() == iSlot)
+			return true;
+	}
+	return false;
+}
+
+bool ZR_GetRespawnEnabled()
+{
+	return g_bRespawnEnabled;
+}
 
 CZRPlayerClassManager* g_pZRPlayerClassManager = nullptr;
 ZRWeaponConfig* g_pZRWeaponConfig = nullptr;
@@ -463,6 +479,8 @@ void CZRPlayerClassManager::LoadPlayerClass()
 			setClassNames.insert(szClassName);
 		}
 	}
+
+	FireClassesLoaded();
 }
 
 template <typename Out>
@@ -1110,6 +1128,8 @@ void ZR_Cure(CCSPlayerController* pTargetController)
 		return;
 
 	g_pZRPlayerClassManager->ApplyPreferredOrDefaultHumanClass(pTargetPawn);
+
+	FireClientHumanPost(pTargetController->GetPlayerSlot(), false);
 }
 
 float ZR_MoanTimer(ZEPlayerHandle hPlayer)
@@ -1222,6 +1242,8 @@ void ZR_Infect(CCSPlayerController* pAttackerController, CCSPlayerController* pV
 
 		ZEPlayerHandle hPlayer = pZEPlayer->GetHandle();
 		CTimer::Create(rand() % (int)g_cvarMoanInterval.Get(), TIMERFLAG_MAP | TIMERFLAG_ROUND, [hPlayer]() { return ZR_MoanTimer(hPlayer); });
+
+		FireClientInfected(pVictimController->GetPlayerSlot(), pAttackerController ? pAttackerController->GetPlayerSlot() : -1, false);
 	}
 }
 
@@ -1265,6 +1287,8 @@ void ZR_InfectMotherZombie(CCSPlayerController* pVictimController, std::vector<S
 	CTimer::Create(rand() % (int)g_cvarMoanInterval.Get(), TIMERFLAG_MAP | TIMERFLAG_ROUND, [hPlayer]() { return ZR_MoanTimer(hPlayer); });
 
 	g_MotherZombies.push_back(hPlayer);
+
+	FireClientInfected(pVictimController->GetPlayerSlot(), -1, true);
 }
 
 // make players who've been picked as MZ recently less likely to be picked again
@@ -1457,6 +1481,8 @@ bool ZR_Hook_OnTakeDamage_Alive(CTakeDamageInfo* pInfo, CCSPlayerPawn* pVictimPa
 			// Can't use the same inflictor here as it'll end up calling this again each burn damage tick
 			// DMG_BURN makes loud noises so use DMG_FALL instead which is completely silent
 			IgnitePawn(pVictimPawn, flDuration, pAttackerPawn, pAttackerPawn, nullptr, DMG_FALL);
+			if (pVictimController)
+				FireClientIgnited(pVictimController->GetPlayerSlot(), flDuration);
 		}
 
 		if (bGrenade || bInferno)
@@ -1669,11 +1695,13 @@ void ZR_OnPlayerDeath(IGameEvent* pEvent)
 
 	// respawn player
 	CHandle<CCSPlayerController> handle = pVictimController->GetHandle();
+	FireClientRespawnScheduled(pVictimController->GetPlayerSlot(), g_bRespawnEnabled);
 	CTimer::Create(g_cvarRespawnDelay.Get() < 0.0f ? 2.0f : g_cvarRespawnDelay.Get(), TIMERFLAG_MAP | TIMERFLAG_ROUND, [handle]() {
 		CCSPlayerController* pController = (CCSPlayerController*)handle.Get();
 		if (!pController || !g_bRespawnEnabled || pController->m_iTeamNum < CS_TEAM_T)
 			return -1.0f;
 		pController->Respawn();
+		FireClientRespawned(pController->GetPlayerSlot());
 		return -1.0f;
 	});
 }
@@ -1772,6 +1800,18 @@ void ZR_FinishRound(int iTeamNum)
 {
 	g_ZRRoundState = EZRRoundState::ROUND_END;
 	ToggleRespawn(true, false);
+
+	for (int i = 0; i < MAXPLAYERS; i++)
+	{
+		CCSPlayerController* pController = CCSPlayerController::FromSlot(i);
+		if (!pController || !pController->IsConnected())
+			continue;
+
+		CCSPlayerPawn* pPawn = pController->GetPlayerPawn();
+		bool bAlive = pPawn && pPawn->IsAlive();
+		bool bZombie = (pController->m_iTeamNum() == CS_TEAM_T);
+		FireRoundEndPlayer(i, bAlive, bZombie);
+	}
 
 	if (iTeamNum == CS_TEAM_CT)
 	{
@@ -1918,6 +1958,8 @@ CON_COMMAND_CHAT(ztele, "- Teleport to spawn")
 
 			pPawn->Teleport(&origin, &rotation, nullptr);
 			ClientPrint(pPawn->GetOriginalController(), HUD_PRINTTALK, ZR_PREFIX "You have been teleported to spawn.");
+			if (pPawn->GetOriginalController())
+				FireClientZteled(pPawn->GetOriginalController()->GetPlayerSlot(), false);
 		}
 		else
 		{

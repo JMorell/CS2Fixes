@@ -23,6 +23,7 @@
 #include "gameevents.pb.h"
 #include "networksystem/inetworkmessages.h"
 #include "zombiereborn.h"
+#include "zr_interface.h"
 
 #include "tier0/memdbgon.h"
 
@@ -197,6 +198,7 @@ static bool Leader_SetNewLeader(ZEPlayer* zpLeader, std::string strColor = "")
 
 	pLeader->m_iScore() = pLeader->m_iScore() + g_cvarLeaderExtraScore.Get();
 	zpLeader->SetLeader(true);
+	FireLeaderChanged(pLeader->GetPlayerSlot(), true);
 	Color color = Color(0, 0, 0, 0);
 
 	if (pawnLeader && pawnLeader->m_iHealth() > 0 && pLeader->m_iTeamNum == CS_TEAM_CT && (Color)(pawnLeader->m_clrRender) != Color(255, 255, 255, 255))
@@ -297,6 +299,7 @@ static void RemoveLeader(CCSPlayerController* ccsLeader)
 
 	ccsLeader->m_iScore() = ccsLeader->m_iScore() - g_cvarLeaderExtraScore.Get();
 	zpLeader->SetLeader(false);
+	FireLeaderChanged(ccsLeader->GetPlayerSlot(), false);
 	zpLeader->SetLeaderColor(Color(0, 0, 0, 0));
 	zpLeader->SetTracerColor(Color(0, 0, 0, 0));
 	zpLeader->SetBeaconColor(Color(0, 0, 0, 0));

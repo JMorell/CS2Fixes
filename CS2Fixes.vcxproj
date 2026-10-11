@@ -212,6 +212,7 @@
     <ClCompile Include="src\user_preferences.cpp" />
     <ClCompile Include="src\votemanager.cpp" />
     <ClCompile Include="src\zombiereborn.cpp" />
+    <ClCompile Include="src\zr_interface.cpp" />
     <ClCompile Include="src\entitylistener.cpp" />
     <ClCompile Include="src\leader.cpp" />
     <ClCompile Include="src\cvarwhitelist.cpp" />
@@ -298,6 +299,8 @@
     <ClInclude Include="src\map_votes.h" />
     <ClInclude Include="src\user_preferences.h" />
     <ClInclude Include="src\zombiereborn.h" />
+    <ClInclude Include="src\zr_interface.h" />
+    <ClInclude Include="include\zombiereborn.h" />
     <ClInclude Include="src\entitylistener.h" />
     <ClInclude Include="src\leader.h" />
     <ClInclude Include="src\cvarwhitelist.h" />

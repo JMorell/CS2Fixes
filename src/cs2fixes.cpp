@@ -52,6 +52,7 @@
 #include "virtual_hooks.h"
 #include "votemanager.h"
 #include "zombiereborn.h"
+#include "zr_interface.h"
 
 #include "tier0/memdbgon.h"
 
@@ -285,6 +286,8 @@ bool CS2Fixes::Unload(char* error, size_t maxlen)
 	if (g_pMapMigrations)
 		delete g_pMapMigrations;
 
+	ClearZREventListeners();
+
 	return true;
 }
 
@@ -299,18 +302,26 @@ void CS2Fixes::AllPluginsLoaded()
 
 void* CS2Fixes::OnMetamodQuery(const char* iface, int* ret)
 {
-	if (V_strcmp(iface, CS2FIXES_INTERFACE))
+	if (!V_strcmp(iface, CS2FIXES_INTERFACE))
 	{
 		if (ret)
-			*ret = META_IFACE_FAILED;
+			*ret = META_IFACE_OK;
 
-		return nullptr;
+		return static_cast<ICS2Fixes*>(&g_CS2Fixes);
+	}
+
+	if (!V_strcmp(iface, ZR_INTERFACE))
+	{
+		if (ret)
+			*ret = META_IFACE_OK;
+
+		return GetPublicZRInterface();
 	}
 
 	if (ret)
-		*ret = META_IFACE_OK;
+		*ret = META_IFACE_FAILED;
 
-	return static_cast<ICS2Fixes*>(&g_CS2Fixes);
+	return nullptr;
 }
 
 std::uint64_t CS2Fixes::GetAdminFlags(std::uint64_t iSteam64ID) const
