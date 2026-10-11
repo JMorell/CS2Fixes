@@ -300,7 +300,7 @@
     <ClInclude Include="src\user_preferences.h" />
     <ClInclude Include="src\zombiereborn.h" />
     <ClInclude Include="src\zr_interface.h" />
-    <ClInclude Include="include\zombiereborn.h" />
+    <ClInclude Include="public\izombiereborn.h" />
     <ClInclude Include="src\entitylistener.h" />
     <ClInclude Include="src\leader.h" />
     <ClInclude Include="src\cvarwhitelist.h" />

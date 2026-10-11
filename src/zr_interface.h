@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "../include/zombiereborn.h"
+#include "public/izombiereborn.h"
 
 IZombieReborn* GetPublicZRInterface();
 void ClearZREventListeners();
